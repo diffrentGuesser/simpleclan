@@ -1,0 +1,4 @@
+Fonts used on this site
+
+- Rubik (rubik.woff2): SIL Open Font License 1.1, https://fonts.google.com/specimen/Rubik
+- Monocraft (monocraft.woff2, subset): SIL Open Font License 1.1, https://github.com/IdreesInc/Monocraft (see Monocraft-OFL.txt)

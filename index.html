@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SimpleClan: clans for Fabric servers</title>
+<meta name="description" content="SimpleClan is a server-side Fabric mod for Minecraft 26.1 to 26.3. Players get colored clan tags and clan chat, and admins choose who appears on the locator bar.">
+<meta name="theme-color" content="#c8382f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Minecraft mod for Fabric 26.x">
+<meta property="og:url" content="https://diffrentguesser.github.io/simpleclan/">
+<meta property="og:title" content="SimpleClan">
+<meta property="og:description" content="Clans for Fabric servers: colored [Clan] tags, clan chat, and locator bar control. Server-side only.">
+<meta property="og:image" content="https://diffrentguesser.github.io/simpleclan/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SimpleClan: a red clan banner over a pixel-art Minecraft dusk landscape">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://diffrentguesser.github.io/simpleclan/assets/og.png">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preload" href="assets/fonts/rubik.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!--
+THESIS: The familiar mod-site page (Geyser-style scene hero, Modrinth-style project layout), done with care, so a server admin can judge SimpleClan in under a minute.
+OWN-WORLD: Dark slate page (#15171b), raised panels, banner red #c8382f as the one action color, banner gold for highlights, Minecraft chat colors only inside in-game examples. Rubik for text, Monocraft for in-game lettering, hand-drawn pixel scene and pixel icons.
+STORY: An admin learns what players get (tags, clan chat), sees the locator bar modes working, checks commands and files touched, and downloads the jar.
+FIRST VIEWPORT: Full-bleed pixel dusk scene with three clan banners; centered icon, "SimpleClan", one-line pitch, red Download button plus jar size, meta row (Fabric, 26.1–26.3, server-side).
+FORM: canon (category standard), user-chosen; seed d706c2dd.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#top" aria-label="SimpleClan home">
+      <img src="assets/icon.png" width="28" height="28" alt="">
+      <span>SimpleClan</span>
+    </a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#overview">Overview</a>
+      <a href="#locator-bar">Locator bar</a>
+      <a href="#commands">Commands</a>
+      <a href="#install">Install</a>
+      <a href="source.html">Source</a>
+    </nav>
+    <a class="btn btn-small" href="downloads/simple-clan-1.2.2.jar" download>
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2h2v7h2v2H9v1H7v-1H5V9h2zM3 13h10v2H3z"/><path d="M4 8h1v1H4zm7 0h1v1h-1z"/></svg>
+      Download
+    </a>
+  </div>
+</header>
+
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="hero-scene" aria-hidden="true"></div>
+  <div class="wrap hero-inner">
+    <img class="hero-icon" src="assets/icon.png" width="96" height="96" alt="SimpleClan icon: a red banner with a gold shield">
+    <h1 id="hero-title">SimpleClan</h1>
+    <p class="hero-pitch">Clans for Fabric servers. Players get a colored <span class="tag tag-gold">[Clan]</span> tag and their own clan chat, and you decide who shows up on their locator bar.</p>
+    <div class="hero-actions">
+      <a class="btn btn-big" href="downloads/simple-clan-1.2.2.jar" download>
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2h2v7h2v2H9v1H7v-1H5V9h2zM3 13h10v2H3z"/><path d="M4 8h1v1H4zm7 0h1v1h-1z"/></svg>
+        Download 1.2.2
+      </a>
+      <span class="hero-file">simple-clan-1.2.2.jar · 28 KB</span>
+    </div>
+    <ul class="hero-meta" aria-label="Compatibility">
+      <li>Fabric</li>
+      <li>Minecraft 26.1 – 26.3</li>
+      <li>Needs Fabric API</li>
+      <li>Server-side: vanilla clients can join</li>
+    </ul>
+  </div>
+</section>
+
+<nav class="tabs" aria-label="Page sections">
+  <div class="wrap tabs-inner">
+    <a href="#overview" class="on">Overview</a>
+    <a href="#locator-bar">Locator bar</a>
+    <a href="#commands">Commands</a>
+    <a href="#install">Install</a>
+    <a href="#changelog">Changelog</a>
+    <a href="source.html">Source</a>
+  </div>
+</nav>
+
+<div class="wrap layout">
+  <main id="main">
+
+    <section id="overview" class="block" aria-labelledby="overview-title">
+      <h2 id="overview-title">What it adds</h2>
+      <p>Players create clans with <code>/clan create &lt;name&gt; &lt;color&gt;</code>, invite friends, and talk in a chat only their clan can read. Every member gets the clan's name as a colored prefix in chat, in the tab list and above their head.</p>
+      <p>The prefix uses Minecraft's own scoreboard teams, so it works on unmodified clients. Your players don't install anything.</p>
+
+      <figure class="ingame" aria-label="Example of SimpleClan in game">
+        <div class="ingame-view">
+        <div class="tablist" role="img" aria-label="Tab list showing players with clan prefixes">
+          <div class="tablist-title">Players online</div>
+          <ul>
+            <li><span class="face" style="--f:0"></span><span class="mc-gold">[Wolves] </span>Steve</li>
+            <li><span class="face" style="--f:1"></span><span class="mc-gold">[Wolves] </span>Alex</li>
+            <li><span class="face" style="--f:2"></span><span class="mc-blue">[Ravens] </span>Mira</li>
+            <li><span class="face" style="--f:3"></span><span class="mc-blue">[Ravens] </span>Jonas</li>
+            <li><span class="face" style="--f:4"></span>Kai</li>
+          </ul>
+        </div>
+        <div class="chatbox" role="img" aria-label="Chat showing a public message and a clan-only message">
+          <p>&lt;<span class="mc-blue">[Ravens] </span>Mira&gt; anyone selling iron?</p>
+          <p class="mc-green">Alex joined your clan.</p>
+          <p><span class="mc-gold">[Wolves] </span>Steve: meet at the base, bring torches</p>
+          <p class="mc-gray">Only Wolves members see that last line.</p>
+        </div>
+        </div>
+        <figcaption>Example. Player and clan names are made up.</figcaption>
+      </figure>
+
+      <h3>For players</h3>
+      <p>Clan owners invite people with <code>/clan invite</code>, or players ask to join with <code>/clan join</code> and the owner accepts or denies. Owners can kick members, hand the clan to someone else, or disband it. Clan names can be up to 16 characters, in any of Minecraft's 16 text colors.</p>
+
+      <h3>For you</h3>
+      <p>Operators can disband any clan, invite or kick players, and transfer ownership with <code>/clan op</code>. You also choose who appears on each player's locator bar, and whether the clan tag goes before or after player names: <span class="tag tag-gold">[Wolves]</span> Steve or Steve <span class="tag tag-gold">[Wolves]</span>.</p>
+    </section>
+
+    <section id="locator-bar" class="block" aria-labelledby="locator-title">
+      <h2 id="locator-title">Locator bar</h2>
+      <p>Since 1.21.6 the locator bar above the hotbar shows a dot for every nearby player. SimpleClan lets you limit that: everyone (vanilla), only players in your own clan, or nobody. Players without a clan see nobody in clan mode.</p>
+
+      <div class="locator" data-mode="everyone">
+        <div class="seg" role="radiogroup" aria-label="Locator bar mode">
+          <button type="button" role="radio" aria-checked="true" data-set="everyone">everyone</button>
+          <button type="button" role="radio" aria-checked="false" data-set="clan">clan</button>
+          <button type="button" role="radio" aria-checked="false" data-set="nobody">nobody</button>
+        </div>
+
+        <div class="bar-stage">
+          <div class="bar" role="img" aria-live="polite" aria-label="Steve's locator bar showing 3 players">
+            <span class="dot dot-alex" data-show="everyone clan"></span>
+            <span class="dot dot-mira" data-show="everyone"></span>
+            <span class="dot dot-kai" data-show="everyone"></span>
+          </div>
+          <div class="hotbar" aria-hidden="true"><i></i><i></i><i></i><i></i><i class="sel"></i><i></i><i></i><i></i><i></i></div>
+        </div>
+
+        <ul class="legend">
+          <li data-show="everyone clan"><span class="swatch sw-alex"></span><span class="mc-gold">[Wolves]</span> Alex <em>same clan as Steve</em></li>
+          <li data-show="everyone"><span class="swatch sw-mira"></span><span class="mc-blue">[Ravens]</span> Mira <em>other clan</em></li>
+          <li data-show="everyone"><span class="swatch sw-kai"></span>Kai <em>no clan</em></li>
+        </ul>
+        <p class="locator-note">This is Steve's view. Steve is in <span class="mc-gold">[Wolves]</span>.</p>
+      </div>
+
+      <p>Set the mode in <code>config/simple-clan.json</code>, or change it in game with <code>/clan locatorbar &lt;everyone|clan|nobody&gt;</code> (operator level 4). The command takes effect immediately and saves the config.</p>
+<pre class="code"><code>{
+  "locatorBar": "clan",
+  "tagPosition": "left"
+}</code></pre>
+      <p><code>tagPosition</code> is <code>left</code> (default) or <code>right</code>. You can also switch it in game with <code>/clan tagposition &lt;left|right&gt;</code>.</p>
+    </section>
+
+    <section id="commands" class="block" aria-labelledby="commands-title">
+      <h2 id="commands-title">Commands</h2>
+      <div class="table-wrap">
+        <table>
+          <caption class="sr">All SimpleClan commands</caption>
+          <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+          <tbody>
+            <tr class="group"><th colspan="2" scope="colgroup">Everyone</th></tr>
+            <tr><td><code>/clan create &lt;name&gt; &lt;color&gt;</code></td><td>Create a clan. Color is a Minecraft color like <code>red</code>, <code>blue</code> or <code>gold</code>.</td></tr>
+            <tr><td><code>/clan accept</code> · <code>/clan deny</code></td><td>Answer an invite.</td></tr>
+            <tr><td><code>/clan join &lt;clan&gt;</code></td><td>Ask to join a clan. The owner gets a message.</td></tr>
+            <tr><td><code>/clan message &lt;text&gt;</code></td><td>Send a message only your clan sees.</td></tr>
+            <tr><td><code>/clan list</code> · <code>/clan list all</code></td><td>Show your clan's members, or every clan.</td></tr>
+            <tr><td><code>/clan leave</code></td><td>Leave your clan.</td></tr>
+            <tr><td><code>/clan refresh</code></td><td>Re-apply your clan prefix.</td></tr>
+            <tr class="group"><th colspan="2" scope="colgroup">Clan owner</th></tr>
+            <tr><td><code>/clan invite &lt;player&gt;</code></td><td>Invite an online player.</td></tr>
+            <tr><td><code>/clan accept &lt;player&gt;</code> · <code>/clan deny &lt;player&gt;</code></td><td>Answer a join request. The player has to be online.</td></tr>
+            <tr><td><code>/clan kick &lt;player&gt;</code></td><td>Remove a member.</td></tr>
+            <tr><td><code>/clan transfer &lt;player&gt;</code></td><td>Make another member the owner.</td></tr>
+            <tr><td><code>/clan disband</code></td><td>Delete the clan.</td></tr>
+            <tr class="group"><th colspan="2" scope="colgroup">Operators (level 4)</th></tr>
+            <tr><td><code>/clan op &lt;clan&gt; disband</code></td><td>Delete any clan.</td></tr>
+            <tr><td><code>/clan op &lt;clan&gt; invite|kick|transfer &lt;player&gt;</code></td><td>Manage any clan's members and owner.</td></tr>
+            <tr><td><code>/clan locatorbar &lt;mode&gt;</code></td><td>Show or set the locator bar mode.</td></tr>
+            <tr><td><code>/clan tagposition &lt;left|right&gt;</code></td><td>Show the clan tag before or after player names.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="install" class="block" aria-labelledby="install-title">
+      <h2 id="install-title">Install</h2>
+      <ol class="steps">
+        <li><span>Make sure the server runs <a href="https://fabricmc.net/use/server/">Fabric Loader</a> for Minecraft 26.1, 26.1.1, 26.1.2, 26.2 or 26.3.</span></li>
+        <li><span>Put <a href="https://modrinth.com/mod/fabric-api">Fabric API</a> and <code>simple-clan-1.2.2.jar</code> in the server's <code>mods</code> folder.</span></li>
+        <li><span>Restart the server. Players can use <code>/clan</code> right away.</span></li>
+      </ol>
+
+      <h3>Files it uses</h3>
+      <dl class="files">
+        <dt><code>config/simple-clan.json</code></dt><dd>Locator bar mode and tag position. Created on first start.</dd>
+        <dt><code>clan_data/</code></dt><dd>Clans, invites and join requests, in the server folder.</dd>
+        <dt>Scoreboard teams <code>clan_&lt;name&gt;</code></dt><dd>One per clan, for the name prefix.</dd>
+      </dl>
+      <p class="note">Clan data is written when the server stops. If the server crashes, changes since the last restart are lost.</p>
+    </section>
+
+    <section id="changelog" class="block" aria-labelledby="changelog-title">
+      <h2 id="changelog-title">Changelog</h2>
+      <article class="release">
+        <h3>1.2.2 <time datetime="2026-10-03">3 Oct 2026</time></h3>
+        <ul><li>The full source is now published on this site, under <a href="source.html">Source</a>. No changes for players.</li></ul>
+      </article>
+      <article class="release">
+        <h3>1.2.1 <time datetime="2026-10-03">3 Oct 2026</time></h3>
+        <ul>
+          <li>Fixed: the clan tag could disappear after a server restart, even though the player was still in the clan.</li>
+          <li>Clan data is now saved every 10 seconds when it changes, not only on a clean shutdown.</li>
+          <li>Disbanding a clan now also removes its scoreboard team.</li>
+        </ul>
+      </article>
+      <article class="release">
+        <h3>1.2.0 <time datetime="2026-10-03">3 Oct 2026</time></h3>
+        <ul><li>New: choose whether the clan tag goes before or after player names (<code>tagPosition</code> in the config, or <code>/clan tagposition</code>).</li></ul>
+      </article>
+      <article class="release">
+        <h3>1.1.2 <time datetime="2026-10-03">3 Oct 2026</time></h3>
+        <ul><li>Author name in the mod info changed. No gameplay changes.</li></ul>
+      </article>
+      <article class="release">
+        <h3>1.1.1 <time datetime="2026-10-02">2 Oct 2026</time></h3>
+        <ul><li>License changed to All Rights Reserved. No gameplay changes.</li></ul>
+      </article>
+      <article class="release">
+        <h3>1.1.0 <time datetime="2026-10-02">2 Oct 2026</time></h3>
+        <ul>
+          <li>Supports Minecraft 26.1 – 26.3.</li>
+          <li>New: choose who appears on the locator bar.</li>
+          <li>Fixed: operator invites put players into the wrong clan.</li>
+          <li>Fixed: clan owners could kick themselves.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <aside class="side" aria-label="Project details">
+    <section class="panel">
+      <h2>Download</h2>
+      <a class="btn btn-block" href="downloads/simple-clan-1.2.2.jar" download>
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2h2v7h2v2H9v1H7v-1H5V9h2zM3 13h10v2H3z"/><path d="M4 8h1v1H4zm7 0h1v1h-1z"/></svg>
+        simple-clan-1.2.2.jar
+      </a>
+      <p class="hash-label">SHA-256</p>
+      <p class="hash"><code id="sha">44f2e3985b1ae822f4856520b32d376f21eb2734829074c3cb8977f2c77e3183</code></p>
+      <button type="button" class="copy" data-copy="#sha">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h9v10h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>
+        <span>Copy hash</span>
+      </button>
+    </section>
+
+    <section class="panel">
+      <h2>Compatibility</h2>
+      <h3>Minecraft</h3>
+      <ul class="chips"><li>26.3</li><li>26.2</li><li>26.1.2</li><li>26.1.1</li><li>26.1</li></ul>
+      <h3>Loader</h3>
+      <ul class="chips"><li>Fabric</li></ul>
+      <h3>Environment</h3>
+      <p>Server-side only. Not needed on clients.</p>
+      <h3>Requires</h3>
+      <p><a href="https://modrinth.com/mod/fabric-api">Fabric API</a></p>
+    </section>
+
+    <section class="panel">
+      <h2>Details</h2>
+      <dl class="details">
+        <dt>Version</dt><dd>1.2.2</dd>
+        <dt>Updated</dt><dd><time datetime="2026-10-03">3 Oct 2026</time></dd>
+        <dt>License</dt><dd>All Rights Reserved</dd>
+        <dt>Author</dt><dd>Oakbanner</dd>
+        <dt>Modrinth</dt><dd>In review, not public yet</dd>
+      </dl>
+    </section>
+  </aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <p>SimpleClan by Oakbanner. All rights reserved.</p>
+    <p>Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
+</body>
+</html>

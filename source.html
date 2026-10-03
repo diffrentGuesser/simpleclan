@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SimpleClan source</title>
+<meta name="description" content="The full source of SimpleClan, a server-side Fabric mod, so you can read exactly what it does before running it. Source-available, All Rights Reserved.">
+<meta name="theme-color" content="#c8382f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Minecraft mod for Fabric 26.x">
+<meta property="og:url" content="https://diffrentguesser.github.io/simpleclan/source.html">
+<meta property="og:title" content="SimpleClan source">
+<meta property="og:description" content="Read every line of SimpleClan before you run it. Server-side Fabric mod, source-available.">
+<meta property="og:image" content="https://diffrentguesser.github.io/simpleclan/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://diffrentguesser.github.io/simpleclan/assets/og.png">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="preload" href="assets/fonts/rubik.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="index.html" aria-label="SimpleClan home">
+      <img src="assets/icon.png" width="28" height="28" alt="">
+      <span>SimpleClan</span>
+    </a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="index.html#overview">Overview</a>
+      <a href="index.html#locator-bar">Locator bar</a>
+      <a href="index.html#commands">Commands</a>
+      <a href="index.html#install">Install</a>
+      <a href="source.html" aria-current="page">Source</a>
+    </nav>
+    <a class="btn btn-small" href="downloads/simple-clan-1.2.2.jar" download>
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2h2v7h2v2H9v1H7v-1H5V9h2zM3 13h10v2H3z"/><path d="M4 8h1v1H4zm7 0h1v1h-1z"/></svg>
+      Download
+    </a>
+  </div>
+</header>
+
+<div class="wrap layout layout-source">
+  <main id="main">
+    <section class="block">
+      <h1 class="src-title">Source code</h1>
+      <p>SimpleClan runs on your server, so you should be able to read exactly what it does first. This is every file in the mod &mdash; the same code that builds the <a href="downloads/simple-clan-1.2.2.jar" download>jar you download</a> (version 1.2.2).</p>
+      <p class="src-note">It is here for you to read and check, not to copy. SimpleClan is <strong>All Rights Reserved</strong>: you may run it on your server, but not reuse, modify or republish the code. See <a href="index.html#install">Install</a> to get started.</p>
+    </section>
+
+    <section class="src-file" id="simpleclan-java">
+  <div class="src-head">
+    <div><span class="src-name">SimpleClan.java</span>
+      <span class="src-path">src/main/java/com/simpleclan/SimpleClan.java</span></div>
+    <button type="button" class="copy src-copy" data-file="simpleclan-java">
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h9v10h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>
+      <span>Copy</span>
+    </button>
+  </div>
+  <pre class="src-code"><code id="code-simpleclan-java"><span class="src-ln"></span>package com.simpleclan;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>import com.google.gson.Gson;
+<span class="src-ln"></span>import com.google.gson.GsonBuilder;
+<span class="src-ln"></span>import com.mojang.brigadier.CommandDispatcher;
+<span class="src-ln"></span>import com.mojang.brigadier.arguments.StringArgumentType;
+<span class="src-ln"></span>import com.mojang.brigadier.context.CommandContext;
+<span class="src-ln"></span>import net.fabricmc.api.ModInitializer;
+<span class="src-ln"></span>import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+<span class="src-ln"></span>import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+<span class="src-ln"></span>import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+<span class="src-ln"></span>import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+<span class="src-ln"></span>import net.minecraft.ChatFormatting;
+<span class="src-ln"></span>import net.minecraft.commands.CommandSourceStack;
+<span class="src-ln"></span>import net.minecraft.commands.Commands;
+<span class="src-ln"></span>import net.minecraft.network.chat.Component;
+<span class="src-ln"></span>import net.minecraft.server.MinecraftServer;
+<span class="src-ln"></span>import net.minecraft.server.level.ServerLevel;
+<span class="src-ln"></span>import net.minecraft.server.level.ServerPlayer;
+<span class="src-ln"></span>import net.minecraft.world.scores.PlayerTeam;
+<span class="src-ln"></span>import net.minecraft.world.scores.Scoreboard;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>import java.nio.file.Files;
+<span class="src-ln"></span>import java.nio.file.Path;
+<span class="src-ln"></span>import java.nio.file.Paths;
+<span class="src-ln"></span>import java.util.ArrayList;
+<span class="src-ln"></span>import java.util.HashMap;
+<span class="src-ln"></span>import java.util.HashSet;
+<span class="src-ln"></span>import java.util.List;
+<span class="src-ln"></span>import java.util.Locale;
+<span class="src-ln"></span>import java.util.Map;
+<span class="src-ln"></span>import java.util.Map.Entry;
+<span class="src-ln"></span>import java.util.Set;
+<span class="src-ln"></span>import java.util.UUID;
+<span class="src-ln"></span>import java.util.stream.Collectors;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>import static net.minecraft.commands.Commands.argument;
+<span class="src-ln"></span>import static net.minecraft.commands.Commands.literal;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>public class SimpleClan implements ModInitializer {
+<span class="src-ln"></span>    private static final Map&lt;String, Clan&gt; clans = new HashMap&lt;&gt;();
+<span class="src-ln"></span>    private static final Map&lt;UUID, String&gt; playerClans = new HashMap&lt;&gt;();
+<span class="src-ln"></span>    private static final Map&lt;UUID, UUID&gt; pendingInvites = new HashMap&lt;&gt;();
+<span class="src-ln"></span>    /** Clan key for each pending invite, so operator invites land in the right clan. */
+<span class="src-ln"></span>    private static final Map&lt;UUID, String&gt; pendingInviteClans = new HashMap&lt;&gt;();
+<span class="src-ln"></span>    private static final Map&lt;String, List&lt;UUID&gt;&gt; joinRequests = new HashMap&lt;&gt;();
+<span class="src-ln"></span>    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+<span class="src-ln"></span>    private static Path dataFolder;
+<span class="src-ln"></span>    private static ClanConfig config = new ClanConfig();
+<span class="src-ln"></span>    /** Last JSON written per data file, so the periodic save only writes what changed. */
+<span class="src-ln"></span>    private static final Map&lt;String, String&gt; lastWritten = new HashMap&lt;&gt;();
+<span class="src-ln"></span>    private int ticksUntilSave = 200;
+<span class="src-ln"></span>    /** Players who joined recently and get their team applied once more, a second later. */
+<span class="src-ln"></span>    private final Map&lt;UUID, Integer&gt; teamRecheck = new HashMap&lt;&gt;();
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    @Override
+<span class="src-ln"></span>    public void onInitialize() {
+<span class="src-ln"></span>        System.out.println(&quot;[SimpleClan] Fabric mod initializing...&quot;);
+<span class="src-ln"></span>        config = ClanConfig.load();
+<span class="src-ln"></span>        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -&gt; this.registerCommands(dispatcher));
+<span class="src-ln"></span>        ServerLifecycleEvents.SERVER_STOPPING.register(server -&gt; {
+<span class="src-ln"></span>            System.out.println(&quot;[SimpleClan] Server stopping. Saving clan data...&quot;);
+<span class="src-ln"></span>            this.saveAllData();
+<span class="src-ln"></span>        });
+<span class="src-ln"></span>        ServerLifecycleEvents.SERVER_STARTED.register(server -&gt; {
+<span class="src-ln"></span>            dataFolder = Paths.get(&quot;clan_data&quot;);
+<span class="src-ln"></span>            this.loadAllData();
+<span class="src-ln"></span>            this.restoreAllTeams(server);
+<span class="src-ln"></span>            this.rebuildPlayerClansMap();
+<span class="src-ln"></span>        });
+<span class="src-ln"></span>        ServerPlayConnectionEvents.JOIN.register((handler, sender, serverInstance) -&gt; {
+<span class="src-ln"></span>            ServerPlayer player = handler.getPlayer();
+<span class="src-ln"></span>            this.applyTeamForPlayer(serverInstance, player, true);
+<span class="src-ln"></span>            teamRecheck.put(player.getUUID(), 20);
+<span class="src-ln"></span>        });
+<span class="src-ln"></span>        ServerTickEvents.END_SERVER_TICK.register(this::tick);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    // --- Locator bar --------------------------------------------------------
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    /** Called by the locator bar mixin: may {@code receiver} see {@code source} on their locator bar? */
+<span class="src-ln"></span>    public static boolean locatorVisible(ServerPlayer source, ServerPlayer receiver) {
+<span class="src-ln"></span>        return switch (config.locatorBarMode()) {
+<span class="src-ln"></span>            case EVERYONE -&gt; true;
+<span class="src-ln"></span>            case NOBODY -&gt; false;
+<span class="src-ln"></span>            case CLAN -&gt; {
+<span class="src-ln"></span>                String a = playerClans.get(source.getUUID());
+<span class="src-ln"></span>                yield a != null &amp;&amp; a.equals(playerClans.get(receiver.getUUID()));
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        };
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    /** Rebuilds every player&#x27;s locator bar connections after clan membership or the mode changes. */
+<span class="src-ln"></span>    private static void refreshLocatorBars(MinecraftServer server) {
+<span class="src-ln"></span>        for (ServerLevel level : server.getAllLevels()) {
+<span class="src-ln"></span>            for (ServerPlayer p : level.players()) {
+<span class="src-ln"></span>                level.getWaypointManager().remakeConnections(p);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void tick(MinecraftServer server) {
+<span class="src-ln"></span>        if (!teamRecheck.isEmpty()) {
+<span class="src-ln"></span>            for (UUID id : new ArrayList&lt;&gt;(teamRecheck.keySet())) {
+<span class="src-ln"></span>                int left = teamRecheck.get(id) - 1;
+<span class="src-ln"></span>                if (left &gt; 0) {
+<span class="src-ln"></span>                    teamRecheck.put(id, left);
+<span class="src-ln"></span>                    continue;
+<span class="src-ln"></span>                }
+<span class="src-ln"></span>                teamRecheck.remove(id);
+<span class="src-ln"></span>                ServerPlayer player = server.getPlayerList().getPlayer(id);
+<span class="src-ln"></span>                if (player != null) {
+<span class="src-ln"></span>                    this.applyTeamForPlayer(server, player, false);
+<span class="src-ln"></span>                }
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        // Save every 10 seconds (only files that changed), so clans survive a
+<span class="src-ln"></span>        // server that is killed instead of stopped cleanly.
+<span class="src-ln"></span>        if (dataFolder != null &amp;&amp; --ticksUntilSave &lt;= 0) {
+<span class="src-ln"></span>            ticksUntilSave = 200;
+<span class="src-ln"></span>            this.saveAllData(false);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    // --- Persistence --------------------------------------------------------
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void saveAllData() {
+<span class="src-ln"></span>        this.saveAllData(true);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void writeIfChanged(Path file, String json) throws java.io.IOException {
+<span class="src-ln"></span>        String key = file.toString();
+<span class="src-ln"></span>        if (json.equals(lastWritten.get(key)) &amp;&amp; Files.exists(file)) {
+<span class="src-ln"></span>            return;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        Files.writeString(file, json);
+<span class="src-ln"></span>        lastWritten.put(key, json);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void saveAllData(boolean log) {
+<span class="src-ln"></span>        try {
+<span class="src-ln"></span>            if (!Files.exists(dataFolder)) {
+<span class="src-ln"></span>                Files.createDirectories(dataFolder);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            Path clansFile = dataFolder.resolve(&quot;clans.json&quot;);
+<span class="src-ln"></span>            ClanDataContainer clanContainer = new ClanDataContainer();
+<span class="src-ln"></span>            clanContainer.clans = new ArrayList&lt;&gt;(clans.values());
+<span class="src-ln"></span>            this.writeIfChanged(clansFile, gson.toJson(clanContainer));
+<span class="src-ln"></span>            Path invitesFile = dataFolder.resolve(&quot;invites.json&quot;);
+<span class="src-ln"></span>            InviteDataContainer inviteContainer = new InviteDataContainer();
+<span class="src-ln"></span>            inviteContainer.invites = new ArrayList&lt;&gt;();
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            for (Entry&lt;UUID, UUID&gt; entry : pendingInvites.entrySet()) {
+<span class="src-ln"></span>                inviteContainer.invites.add(new InviteEntry(entry.getKey(), entry.getValue(),
+<span class="src-ln"></span>                        pendingInviteClans.get(entry.getKey())));
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            this.writeIfChanged(invitesFile, gson.toJson(inviteContainer));
+<span class="src-ln"></span>            Path requestsFile = dataFolder.resolve(&quot;requests.json&quot;);
+<span class="src-ln"></span>            RequestDataContainer requestContainer = new RequestDataContainer();
+<span class="src-ln"></span>            requestContainer.requests = new ArrayList&lt;&gt;();
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            for (Entry&lt;String, List&lt;UUID&gt;&gt; entry : joinRequests.entrySet()) {
+<span class="src-ln"></span>                requestContainer.requests.add(new RequestEntry(entry.getKey(), entry.getValue()));
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            this.writeIfChanged(requestsFile, gson.toJson(requestContainer));
+<span class="src-ln"></span>            if (log) {
+<span class="src-ln"></span>                System.out.println(&quot;[SimpleClan] Data saved successfully.&quot;);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        } catch (Exception e) {
+<span class="src-ln"></span>            System.err.println(&quot;[SimpleClan] Failed to save data: &quot; + e.getMessage());
+<span class="src-ln"></span>            e.printStackTrace();
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void loadAllData() {
+<span class="src-ln"></span>        try {
+<span class="src-ln"></span>            if (!Files.exists(dataFolder)) {
+<span class="src-ln"></span>                System.out.println(&quot;[SimpleClan] No data folder found, starting fresh.&quot;);
+<span class="src-ln"></span>                return;
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            Path clansFile = dataFolder.resolve(&quot;clans.json&quot;);
+<span class="src-ln"></span>            if (Files.exists(clansFile)) {
+<span class="src-ln"></span>                ClanDataContainer clanContainer = gson.fromJson(Files.readString(clansFile), ClanDataContainer.class);
+<span class="src-ln"></span>                if (clanContainer != null &amp;&amp; clanContainer.clans != null) {
+<span class="src-ln"></span>                    clans.clear();
+<span class="src-ln"></span>                    for (Clan clan : clanContainer.clans) {
+<span class="src-ln"></span>                        clans.put(clan.name.toLowerCase(Locale.ROOT), clan);
+<span class="src-ln"></span>                    }
+<span class="src-ln"></span>                    System.out.println(&quot;[SimpleClan] Loaded &quot; + clans.size() + &quot; clans.&quot;);
+<span class="src-ln"></span>                }
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            Path invitesFile = dataFolder.resolve(&quot;invites.json&quot;);
+<span class="src-ln"></span>            if (Files.exists(invitesFile)) {
+<span class="src-ln"></span>                InviteDataContainer inviteContainer = gson.fromJson(Files.readString(invitesFile), InviteDataContainer.class);
+<span class="src-ln"></span>                if (inviteContainer != null &amp;&amp; inviteContainer.invites != null) {
+<span class="src-ln"></span>                    pendingInvites.clear();
+<span class="src-ln"></span>                    pendingInviteClans.clear();
+<span class="src-ln"></span>                    for (InviteEntry entry : inviteContainer.invites) {
+<span class="src-ln"></span>                        pendingInvites.put(entry.invitee, entry.inviter);
+<span class="src-ln"></span>                        if (entry.clan != null) {
+<span class="src-ln"></span>                            pendingInviteClans.put(entry.invitee, entry.clan);
+<span class="src-ln"></span>                        }
+<span class="src-ln"></span>                    }
+<span class="src-ln"></span>                }
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>            Path requestsFile = dataFolder.resolve(&quot;requests.json&quot;);
+<span class="src-ln"></span>            if (Files.exists(requestsFile)) {
+<span class="src-ln"></span>                RequestDataContainer requestContainer = gson.fromJson(Files.readString(requestsFile), RequestDataContainer.class);
+<span class="src-ln"></span>                if (requestContainer != null &amp;&amp; requestContainer.requests != null) {
+<span class="src-ln"></span>                    joinRequests.clear();
+<span class="src-ln"></span>                    for (RequestEntry entry : requestContainer.requests) {
+<span class="src-ln"></span>                        joinRequests.put(entry.clanName, entry.requests);
+<span class="src-ln"></span>                    }
+<span class="src-ln"></span>                }
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        } catch (Exception e) {
+<span class="src-ln"></span>            System.err.println(&quot;[SimpleClan] Failed to load data: &quot; + e.getMessage());
+<span class="src-ln"></span>            e.printStackTrace();
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void rebuildPlayerClansMap() {
+<span class="src-ln"></span>        playerClans.clear();
+<span class="src-ln"></span>        for (Entry&lt;String, Clan&gt; entry : clans.entrySet()) {
+<span class="src-ln"></span>            for (UUID memberId : entry.getValue().members) {
+<span class="src-ln"></span>                playerClans.put(memberId, entry.getKey());
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        System.out.println(&quot;[SimpleClan] Rebuilt player-clan mapping for &quot; + playerClans.size() + &quot; players.&quot;);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    // --- Commands -----------------------------------------------------------
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void registerCommands(CommandDispatcher&lt;CommandSourceStack&gt; dispatcher) {
+<span class="src-ln"></span>        dispatcher.register(literal(&quot;clan&quot;)
+<span class="src-ln"></span>                .then(literal(&quot;create&quot;)
+<span class="src-ln"></span>                        .then(argument(&quot;name&quot;, StringArgumentType.word())
+<span class="src-ln"></span>                                .then(argument(&quot;color&quot;, StringArgumentType.word()).executes(this::cmdCreate))))
+<span class="src-ln"></span>                .then(literal(&quot;invite&quot;)
+<span class="src-ln"></span>                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdInvite)))
+<span class="src-ln"></span>                .then(literal(&quot;accept&quot;).executes(this::cmdAccept)
+<span class="src-ln"></span>                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdAcceptPlayer)))
+<span class="src-ln"></span>                .then(literal(&quot;deny&quot;).executes(this::cmdDeny)
+<span class="src-ln"></span>                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdDenyPlayer)))
+<span class="src-ln"></span>                .then(literal(&quot;kick&quot;)
+<span class="src-ln"></span>                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdKick)))
+<span class="src-ln"></span>                .then(literal(&quot;leave&quot;).executes(this::cmdLeave))
+<span class="src-ln"></span>                .then(literal(&quot;disband&quot;).executes(this::cmdDisband))
+<span class="src-ln"></span>                .then(literal(&quot;transfer&quot;)
+<span class="src-ln"></span>                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdTransfer)))
+<span class="src-ln"></span>                .then(literal(&quot;join&quot;)
+<span class="src-ln"></span>                        .then(argument(&quot;name&quot;, StringArgumentType.word()).executes(this::cmdJoin)))
+<span class="src-ln"></span>                .then(literal(&quot;message&quot;)
+<span class="src-ln"></span>                        .then(argument(&quot;message&quot;, StringArgumentType.greedyString()).executes(this::cmdMessage)))
+<span class="src-ln"></span>                .then(literal(&quot;list&quot;).executes(this::cmdList)
+<span class="src-ln"></span>                        .then(literal(&quot;all&quot;).executes(this::cmdListAll)))
+<span class="src-ln"></span>                .then(literal(&quot;refresh&quot;).executes(this::cmdRefresh))
+<span class="src-ln"></span>                .then(literal(&quot;locatorbar&quot;)
+<span class="src-ln"></span>                        .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+<span class="src-ln"></span>                        .executes(this::cmdLocatorBarShow)
+<span class="src-ln"></span>                        .then(literal(&quot;everyone&quot;).executes(ctx -&gt; cmdLocatorBarSet(ctx, ClanConfig.LocatorBarMode.EVERYONE)))
+<span class="src-ln"></span>                        .then(literal(&quot;clan&quot;).executes(ctx -&gt; cmdLocatorBarSet(ctx, ClanConfig.LocatorBarMode.CLAN)))
+<span class="src-ln"></span>                        .then(literal(&quot;nobody&quot;).executes(ctx -&gt; cmdLocatorBarSet(ctx, ClanConfig.LocatorBarMode.NOBODY))))
+<span class="src-ln"></span>                .then(literal(&quot;tagposition&quot;)
+<span class="src-ln"></span>                        .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+<span class="src-ln"></span>                        .executes(this::cmdTagPositionShow)
+<span class="src-ln"></span>                        .then(literal(&quot;left&quot;).executes(ctx -&gt; cmdTagPositionSet(ctx, &quot;left&quot;)))
+<span class="src-ln"></span>                        .then(literal(&quot;right&quot;).executes(ctx -&gt; cmdTagPositionSet(ctx, &quot;right&quot;))))
+<span class="src-ln"></span>                .then(literal(&quot;op&quot;)
+<span class="src-ln"></span>                        .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+<span class="src-ln"></span>                        .then(argument(&quot;clanname&quot;, StringArgumentType.word())
+<span class="src-ln"></span>                                .then(literal(&quot;disband&quot;).executes(this::cmdOpDisband))
+<span class="src-ln"></span>                                .then(literal(&quot;invite&quot;)
+<span class="src-ln"></span>                                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdOpInvite)))
+<span class="src-ln"></span>                                .then(literal(&quot;kick&quot;)
+<span class="src-ln"></span>                                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdOpKick)))
+<span class="src-ln"></span>                                .then(literal(&quot;transfer&quot;)
+<span class="src-ln"></span>                                        .then(argument(&quot;player&quot;, StringArgumentType.word()).executes(this::cmdOpTransfer))))));
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static void msg(ServerPlayer player, Component text) {
+<span class="src-ln"></span>        player.sendSystemMessage(text);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static Component red(String s) {
+<span class="src-ln"></span>        return Component.literal(s).withStyle(ChatFormatting.RED);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static Component green(String s) {
+<span class="src-ln"></span>        return Component.literal(s).withStyle(ChatFormatting.GREEN);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdTagPositionShow(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ctx.getSource().sendSuccess(() -&gt; Component.literal(&quot;Clan tags are shown &quot;
+<span class="src-ln"></span>                + (config.tagOnRight() ? &quot;right of&quot; : &quot;left of&quot;) + &quot; player names.&quot;)
+<span class="src-ln"></span>                .withStyle(ChatFormatting.AQUA), false);
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdTagPositionSet(CommandContext&lt;CommandSourceStack&gt; ctx, String side) {
+<span class="src-ln"></span>        config.tagPosition = side;
+<span class="src-ln"></span>        config.save();
+<span class="src-ln"></span>        this.restoreAllTeams(ctx.getSource().getServer());
+<span class="src-ln"></span>        ctx.getSource().sendSuccess(() -&gt; Component.literal(&quot;Clan tags are now shown &quot; + side + &quot; of player names.&quot;)
+<span class="src-ln"></span>                .withStyle(ChatFormatting.GREEN), true);
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdLocatorBarShow(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ctx.getSource().sendSuccess(() -&gt; Component.literal(&quot;Locator bar shows: &quot; + config.locatorBarMode().label())
+<span class="src-ln"></span>                .withStyle(ChatFormatting.AQUA), false);
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdLocatorBarSet(CommandContext&lt;CommandSourceStack&gt; ctx, ClanConfig.LocatorBarMode mode) {
+<span class="src-ln"></span>        config.locatorBar = mode.name().toLowerCase(Locale.ROOT);
+<span class="src-ln"></span>        config.save();
+<span class="src-ln"></span>        refreshLocatorBars(ctx.getSource().getServer());
+<span class="src-ln"></span>        ctx.getSource().sendSuccess(() -&gt; Component.literal(&quot;Locator bar now shows: &quot; + mode.label())
+<span class="src-ln"></span>                .withStyle(ChatFormatting.GREEN), true);
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdCreate(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String name = StringArgumentType.getString(ctx, &quot;name&quot;);
+<span class="src-ln"></span>        String colorArg = StringArgumentType.getString(ctx, &quot;color&quot;).toUpperCase(Locale.ROOT);
+<span class="src-ln"></span>        if (playerClans.containsKey(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are already in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        if (name.length() &gt; 16) {
+<span class="src-ln"></span>            msg(player, red(&quot;Clan name too long (max 16 chars).&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        ChatFormatting color;
+<span class="src-ln"></span>        try {
+<span class="src-ln"></span>            color = ChatFormatting.valueOf(colorArg);
+<span class="src-ln"></span>        } catch (Exception ex) {
+<span class="src-ln"></span>            msg(player, red(&quot;Invalid color. Example: RED, BLUE, GREEN&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        String key = name.toLowerCase(Locale.ROOT);
+<span class="src-ln"></span>        if (clans.containsKey(key)) {
+<span class="src-ln"></span>            msg(player, red(&quot;A clan with that name already exists.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan clan = new Clan(name, color, playerId);
+<span class="src-ln"></span>        clan.members.add(playerId);
+<span class="src-ln"></span>        clans.put(key, clan);
+<span class="src-ln"></span>        playerClans.put(playerId, key);
+<span class="src-ln"></span>        this.applyTeamForClan(player.level().getServer(), clan);
+<span class="src-ln"></span>        refreshLocatorBars(player.level().getServer());
+<span class="src-ln"></span>        msg(player, Component.literal(&quot;Clan created: &quot;).append(Component.literal(name).withStyle(color)));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdInvite(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        String clanKey = playerClans.get(playerId);
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        if (!clan.owner.equals(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;Only the owner can invite players.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        ServerPlayer target = this.lookupOnlinePlayer(player.level().getServer(), targetName);
+<span class="src-ln"></span>        if (target == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Player not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (playerClans.containsKey(target.getUUID())) {
+<span class="src-ln"></span>            msg(player, red(&quot;That player is already in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        pendingInvites.put(target.getUUID(), playerId);
+<span class="src-ln"></span>        pendingInviteClans.put(target.getUUID(), clanKey);
+<span class="src-ln"></span>        msg(target, Component.literal(player.getName().getString() + &quot; invited you to join clan &quot;)
+<span class="src-ln"></span>                .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                .append(Component.literal(&quot;. Type /clan accept to join or /clan deny to decline.&quot;))
+<span class="src-ln"></span>                .withStyle(ChatFormatting.YELLOW));
+<span class="src-ln"></span>        msg(player, green(&quot;Invite sent to &quot; + target.getName().getString()));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdAccept(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        if (!pendingInvites.containsKey(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;You have no pending invites.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID inviterId = pendingInvites.remove(playerId);
+<span class="src-ln"></span>        String inviteClan = pendingInviteClans.remove(playerId);
+<span class="src-ln"></span>        // Invites saved by older versions have no clan key; fall back to the inviter&#x27;s clan.
+<span class="src-ln"></span>        String clanKey = inviteClan != null ? inviteClan : playerClans.get(inviterId);
+<span class="src-ln"></span>        if (clanKey == null || !clans.containsKey(clanKey)) {
+<span class="src-ln"></span>            msg(player, red(&quot;The inviting clan no longer exists.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (playerClans.containsKey(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are already in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        clan.members.add(playerId);
+<span class="src-ln"></span>        playerClans.put(playerId, clanKey);
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        this.applyTeamForClan(server, clan);
+<span class="src-ln"></span>        refreshLocatorBars(server);
+<span class="src-ln"></span>        msg(player, Component.literal(&quot;You joined clan &quot;).append(Component.literal(clan.name).withStyle(clan.color)));
+<span class="src-ln"></span>        ServerPlayer inviter = server.getPlayerList().getPlayer(inviterId);
+<span class="src-ln"></span>        if (inviter != null) {
+<span class="src-ln"></span>            msg(inviter, green(player.getName().getString() + &quot; joined your clan.&quot;));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdAcceptPlayer(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        String ownerClanKey = playerClans.get(playerId);
+<span class="src-ln"></span>        if (ownerClanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan clan = clans.get(ownerClanKey);
+<span class="src-ln"></span>        if (!clan.owner.equals(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;Only the owner can accept join requests.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        List&lt;UUID&gt; requests = joinRequests.getOrDefault(ownerClanKey, new ArrayList&lt;&gt;());
+<span class="src-ln"></span>        UUID found = findRequest(server, requests, targetName);
+<span class="src-ln"></span>        if (found == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;No join request from that player (or they are offline).&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        requests.remove(found);
+<span class="src-ln"></span>        joinRequests.put(ownerClanKey, requests);
+<span class="src-ln"></span>        if (playerClans.containsKey(found)) {
+<span class="src-ln"></span>            msg(player, red(&quot;That player is already in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        clan.members.add(found);
+<span class="src-ln"></span>        playerClans.put(found, ownerClanKey);
+<span class="src-ln"></span>        this.applyTeamForClan(server, clan);
+<span class="src-ln"></span>        refreshLocatorBars(server);
+<span class="src-ln"></span>        ServerPlayer newly = server.getPlayerList().getPlayer(found);
+<span class="src-ln"></span>        if (newly != null) {
+<span class="src-ln"></span>            msg(newly, Component.literal(&quot;Your request to join clan &quot;)
+<span class="src-ln"></span>                    .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                    .append(Component.literal(&quot; was accepted.&quot;))
+<span class="src-ln"></span>                    .withStyle(ChatFormatting.GREEN));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        msg(player, green(&quot;Player accepted into the clan.&quot;));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdDeny(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        if (pendingInvites.remove(playerId) != null) {
+<span class="src-ln"></span>            pendingInviteClans.remove(playerId);
+<span class="src-ln"></span>            msg(player, Component.literal(&quot;Invite declined.&quot;).withStyle(ChatFormatting.YELLOW));
+<span class="src-ln"></span>        } else {
+<span class="src-ln"></span>            msg(player, red(&quot;You have no pending invites.&quot;));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdDenyPlayer(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        String ownerClanKey = playerClans.get(playerId);
+<span class="src-ln"></span>        if (ownerClanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan clan = clans.get(ownerClanKey);
+<span class="src-ln"></span>        if (!clan.owner.equals(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;Only the owner can deny join requests.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        List&lt;UUID&gt; requests = joinRequests.getOrDefault(ownerClanKey, new ArrayList&lt;&gt;());
+<span class="src-ln"></span>        UUID found = findRequest(server, requests, targetName);
+<span class="src-ln"></span>        if (found == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;No join request from that player (or they are offline).&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        requests.remove(found);
+<span class="src-ln"></span>        joinRequests.put(ownerClanKey, requests);
+<span class="src-ln"></span>        ServerPlayer denied = server.getPlayerList().getPlayer(found);
+<span class="src-ln"></span>        if (denied != null) {
+<span class="src-ln"></span>            msg(denied, Component.literal(&quot;Your request to join &quot;)
+<span class="src-ln"></span>                    .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                    .append(Component.literal(&quot; was denied.&quot;))
+<span class="src-ln"></span>                    .withStyle(ChatFormatting.YELLOW));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        msg(player, green(&quot;Join request denied.&quot;));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static UUID findRequest(MinecraftServer server, List&lt;UUID&gt; requests, String targetName) {
+<span class="src-ln"></span>        for (UUID u : new ArrayList&lt;&gt;(requests)) {
+<span class="src-ln"></span>            ServerPlayer possible = server.getPlayerList().getPlayer(u);
+<span class="src-ln"></span>            if (possible != null &amp;&amp; possible.getName().getString().equalsIgnoreCase(targetName)) {
+<span class="src-ln"></span>                return u;
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return null;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdKick(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        String clanKey = playerClans.get(playerId);
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        if (!clan.owner.equals(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;Only the owner can kick members.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        ServerPlayer target = this.lookupOnlinePlayer(server, targetName);
+<span class="src-ln"></span>        if (target == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Player not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (!clan.members.contains(target.getUUID())) {
+<span class="src-ln"></span>            msg(player, red(&quot;That player is not in your clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (target.getUUID().equals(clan.owner)) {
+<span class="src-ln"></span>            msg(player, red(&quot;You can&#x27;t kick yourself. Use /clan disband or /clan transfer.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        clan.members.remove(target.getUUID());
+<span class="src-ln"></span>        playerClans.remove(target.getUUID());
+<span class="src-ln"></span>        this.removeFromTeam(server, target);
+<span class="src-ln"></span>        refreshLocatorBars(server);
+<span class="src-ln"></span>        msg(player, green(target.getName().getString() + &quot; kicked from clan.&quot;));
+<span class="src-ln"></span>        msg(target, Component.literal(&quot;You were kicked from clan &quot;)
+<span class="src-ln"></span>                .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                .withStyle(ChatFormatting.RED));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdLeave(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String clanKey = playerClans.get(playerId);
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        if (clan.owner.equals(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are the owner. Use /clan disband or /clan transfer.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        clan.members.remove(playerId);
+<span class="src-ln"></span>        playerClans.remove(playerId);
+<span class="src-ln"></span>        this.removeFromTeam(server, player);
+<span class="src-ln"></span>        refreshLocatorBars(server);
+<span class="src-ln"></span>        msg(player, Component.literal(&quot;You left the clan &quot;)
+<span class="src-ln"></span>                .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                .withStyle(ChatFormatting.GREEN));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdDisband(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String clanKey = playerClans.get(playerId);
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        if (!clan.owner.equals(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;Only the owner can disband.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        disband(player.level().getServer(), clanKey, clan, &quot;Your clan was disbanded.&quot;);
+<span class="src-ln"></span>        msg(player, green(&quot;Clan disbanded.&quot;));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void disband(MinecraftServer server, String clanKey, Clan clan, String notice) {
+<span class="src-ln"></span>        for (UUID m : new ArrayList&lt;&gt;(clan.members)) {
+<span class="src-ln"></span>            ServerPlayer p = server.getPlayerList().getPlayer(m);
+<span class="src-ln"></span>            if (p != null) {
+<span class="src-ln"></span>                msg(p, red(notice));
+<span class="src-ln"></span>                this.removeFromTeam(server, p);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>            playerClans.remove(m);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        clans.remove(clanKey);
+<span class="src-ln"></span>        joinRequests.remove(clanKey);
+<span class="src-ln"></span>        // Drop the whole team, which also clears the tag of offline members.
+<span class="src-ln"></span>        PlayerTeam team = server.getScoreboard().getPlayerTeam(this.teamIdFromClanName(clan.name));
+<span class="src-ln"></span>        if (team != null) {
+<span class="src-ln"></span>            server.getScoreboard().removePlayerTeam(team);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        refreshLocatorBars(server);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdTransfer(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        String clanKey = playerClans.get(playerId);
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        if (!clan.owner.equals(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;Only the owner can transfer ownership.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        ServerPlayer newOwner = this.lookupOnlinePlayer(server, targetName);
+<span class="src-ln"></span>        if (newOwner != null &amp;&amp; clan.members.contains(newOwner.getUUID())) {
+<span class="src-ln"></span>            clan.owner = newOwner.getUUID();
+<span class="src-ln"></span>            msg(player, green(&quot;Ownership transferred to &quot; + newOwner.getName().getString()));
+<span class="src-ln"></span>            msg(newOwner, green(&quot;You are now the clan owner.&quot;));
+<span class="src-ln"></span>            this.applyTeamForClan(server, clan);
+<span class="src-ln"></span>        } else {
+<span class="src-ln"></span>            msg(player, red(&quot;Player not found or not in your clan.&quot;));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdJoin(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        UUID playerId = player.getUUID();
+<span class="src-ln"></span>        String targetClanName = StringArgumentType.getString(ctx, &quot;name&quot;).toLowerCase(Locale.ROOT);
+<span class="src-ln"></span>        if (!clans.containsKey(targetClanName)) {
+<span class="src-ln"></span>            msg(player, red(&quot;Clan not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        if (playerClans.containsKey(playerId)) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are already in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        List&lt;UUID&gt; reqs = joinRequests.computeIfAbsent(targetClanName, k -&gt; new ArrayList&lt;&gt;());
+<span class="src-ln"></span>        if (!reqs.contains(playerId)) {
+<span class="src-ln"></span>            reqs.add(playerId);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan requestClan = clans.get(targetClanName);
+<span class="src-ln"></span>        ServerPlayer owner = player.level().getServer().getPlayerList().getPlayer(requestClan.owner);
+<span class="src-ln"></span>        String name = player.getName().getString();
+<span class="src-ln"></span>        if (owner != null) {
+<span class="src-ln"></span>            msg(owner, Component.literal(name + &quot; requested to join your clan. Type /clan accept &quot; + name
+<span class="src-ln"></span>                    + &quot; or /clan deny &quot; + name).withStyle(ChatFormatting.YELLOW));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        msg(player, Component.literal(&quot;Join request sent to clan &quot;)
+<span class="src-ln"></span>                .append(Component.literal(requestClan.name).withStyle(requestClan.color))
+<span class="src-ln"></span>                .withStyle(ChatFormatting.GREEN));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdMessage(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        String message = StringArgumentType.getString(ctx, &quot;message&quot;);
+<span class="src-ln"></span>        String clanKey = playerClans.get(player.getUUID());
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        for (UUID memberId : clan.members) {
+<span class="src-ln"></span>            ServerPlayer member = player.level().getServer().getPlayerList().getPlayer(memberId);
+<span class="src-ln"></span>            if (member != null) {
+<span class="src-ln"></span>                Component tag = Component.literal(&quot;[&quot; + clan.name + &quot;]&quot;).withStyle(clan.color);
+<span class="src-ln"></span>                String name = player.getName().getString();
+<span class="src-ln"></span>                msg(member, config.tagOnRight()
+<span class="src-ln"></span>                        ? Component.literal(name + &quot; &quot;).withStyle(ChatFormatting.WHITE).append(tag)
+<span class="src-ln"></span>                                .append(Component.literal(&quot;: &quot; + message).withStyle(ChatFormatting.WHITE))
+<span class="src-ln"></span>                        : Component.empty().append(tag)
+<span class="src-ln"></span>                                .append(Component.literal(&quot; &quot; + name + &quot;: &quot; + message).withStyle(ChatFormatting.WHITE)));
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdList(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        String clanKey = playerClans.get(player.getUUID());
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        msg(player, Component.literal(&quot;Clan &quot;)
+<span class="src-ln"></span>                .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                .append(Component.literal(&quot; members:&quot;))
+<span class="src-ln"></span>                .withStyle(ChatFormatting.AQUA));
+<span class="src-ln"></span>        for (UUID m : clan.members) {
+<span class="src-ln"></span>            msg(player, Component.literal(this.getNameIfOnline(player.level().getServer(), m)));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdListAll(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        if (clans.isEmpty()) {
+<span class="src-ln"></span>            msg(player, Component.literal(&quot;No clans exist.&quot;).withStyle(ChatFormatting.YELLOW));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        msg(player, Component.literal(&quot;All clans:&quot;).withStyle(ChatFormatting.AQUA));
+<span class="src-ln"></span>        for (Clan c : clans.values()) {
+<span class="src-ln"></span>            String members = c.members.stream().map(uuid -&gt; this.getNameIfOnline(server, uuid))
+<span class="src-ln"></span>                    .collect(Collectors.joining(&quot;, &quot;));
+<span class="src-ln"></span>            msg(player, Component.literal(c.name + &quot;:\n&quot;).withStyle(c.color)
+<span class="src-ln"></span>                    .append(Component.literal(&quot;owner: &quot; + this.getNameIfOnline(server, c.owner)
+<span class="src-ln"></span>                            + &quot;\nmembers: &quot; + members).withStyle(ChatFormatting.WHITE)));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdRefresh(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        String clanKey = playerClans.get(player.getUUID());
+<span class="src-ln"></span>        if (clanKey == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;You are not in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        Clan clan = clans.get(clanKey);
+<span class="src-ln"></span>        this.applyTeamForClan(player.level().getServer(), clan);
+<span class="src-ln"></span>        refreshLocatorBars(player.level().getServer());
+<span class="src-ln"></span>        msg(player, green(&quot;Clan prefix refreshed!&quot;));
+<span class="src-ln"></span>        System.out.println(&quot;[SimpleClan] Manual refresh for &quot; + player.getName().getString() + &quot; in clan &quot; + clan.name);
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdOpDisband(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        String clanName = StringArgumentType.getString(ctx, &quot;clanname&quot;).toLowerCase(Locale.ROOT);
+<span class="src-ln"></span>        Clan clan = clans.get(clanName);
+<span class="src-ln"></span>        if (clan == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Clan not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        disband(player.level().getServer(), clanName, clan, &quot;Your clan was disbanded by an operator.&quot;);
+<span class="src-ln"></span>        msg(player, green(&quot;Clan &quot; + clan.name + &quot; disbanded by operator.&quot;));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdOpInvite(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        String clanName = StringArgumentType.getString(ctx, &quot;clanname&quot;).toLowerCase(Locale.ROOT);
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        Clan clan = clans.get(clanName);
+<span class="src-ln"></span>        if (clan == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Clan not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        ServerPlayer target = this.lookupOnlinePlayer(player.level().getServer(), targetName);
+<span class="src-ln"></span>        if (target == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Player not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (playerClans.containsKey(target.getUUID())) {
+<span class="src-ln"></span>            msg(player, red(&quot;That player is already in a clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        pendingInvites.put(target.getUUID(), player.getUUID());
+<span class="src-ln"></span>        pendingInviteClans.put(target.getUUID(), clanName);
+<span class="src-ln"></span>        msg(target, Component.literal(&quot;An operator invited you to join clan &quot;)
+<span class="src-ln"></span>                .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                .append(Component.literal(&quot;. Type /clan accept to join or /clan deny to decline.&quot;))
+<span class="src-ln"></span>                .withStyle(ChatFormatting.YELLOW));
+<span class="src-ln"></span>        msg(player, green(&quot;Operator invite sent to &quot; + target.getName().getString()));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdOpKick(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        String clanName = StringArgumentType.getString(ctx, &quot;clanname&quot;).toLowerCase(Locale.ROOT);
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        Clan clan = clans.get(clanName);
+<span class="src-ln"></span>        if (clan == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Clan not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        ServerPlayer target = this.lookupOnlinePlayer(server, targetName);
+<span class="src-ln"></span>        if (target == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Player not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (!clan.members.contains(target.getUUID())) {
+<span class="src-ln"></span>            msg(player, red(&quot;That player is not in the clan.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (target.getUUID().equals(clan.owner)) {
+<span class="src-ln"></span>            msg(player, red(&quot;That player owns the clan. Transfer ownership or disband the clan instead.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        clan.members.remove(target.getUUID());
+<span class="src-ln"></span>        playerClans.remove(target.getUUID());
+<span class="src-ln"></span>        this.removeFromTeam(server, target);
+<span class="src-ln"></span>        refreshLocatorBars(server);
+<span class="src-ln"></span>        msg(player, green(target.getName().getString() + &quot; kicked from clan &quot; + clan.name + &quot; by operator.&quot;));
+<span class="src-ln"></span>        msg(target, Component.literal(&quot;You were kicked from clan &quot;)
+<span class="src-ln"></span>                .append(Component.literal(clan.name).withStyle(clan.color))
+<span class="src-ln"></span>                .append(Component.literal(&quot; by an operator.&quot;))
+<span class="src-ln"></span>                .withStyle(ChatFormatting.RED));
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private int cmdOpTransfer(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        ServerPlayer player = this.getPlayer(ctx);
+<span class="src-ln"></span>        if (player == null) {
+<span class="src-ln"></span>            return 0;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        String clanName = StringArgumentType.getString(ctx, &quot;clanname&quot;).toLowerCase(Locale.ROOT);
+<span class="src-ln"></span>        String targetName = StringArgumentType.getString(ctx, &quot;player&quot;);
+<span class="src-ln"></span>        Clan clan = clans.get(clanName);
+<span class="src-ln"></span>        if (clan == null) {
+<span class="src-ln"></span>            msg(player, red(&quot;Clan not found.&quot;));
+<span class="src-ln"></span>            return 1;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        MinecraftServer server = player.level().getServer();
+<span class="src-ln"></span>        ServerPlayer newOwner = this.lookupOnlinePlayer(server, targetName);
+<span class="src-ln"></span>        if (newOwner != null &amp;&amp; clan.members.contains(newOwner.getUUID())) {
+<span class="src-ln"></span>            clan.owner = newOwner.getUUID();
+<span class="src-ln"></span>            msg(player, green(&quot;Ownership of clan &quot; + clan.name + &quot; transferred to &quot;
+<span class="src-ln"></span>                    + newOwner.getName().getString() + &quot; by operator.&quot;));
+<span class="src-ln"></span>            msg(newOwner, green(&quot;You are now the clan owner (transferred by operator).&quot;));
+<span class="src-ln"></span>            this.applyTeamForClan(server, clan);
+<span class="src-ln"></span>        } else {
+<span class="src-ln"></span>            msg(player, red(&quot;Player not found or not in the clan.&quot;));
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return 1;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    // --- Scoreboard teams ---------------------------------------------------
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void restoreAllTeams(MinecraftServer server) {
+<span class="src-ln"></span>        System.out.println(&quot;[SimpleClan] Restoring teams for &quot; + clans.size() + &quot; clans&quot;);
+<span class="src-ln"></span>        for (Clan clan : clans.values()) {
+<span class="src-ln"></span>            this.applyTeamForClan(server, clan);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void applyTeamForClan(MinecraftServer server, Clan clan) {
+<span class="src-ln"></span>        Scoreboard sb = server.getScoreboard();
+<span class="src-ln"></span>        String teamId = this.teamIdFromClanName(clan.name);
+<span class="src-ln"></span>        PlayerTeam team = sb.getPlayerTeam(teamId);
+<span class="src-ln"></span>        if (team == null) {
+<span class="src-ln"></span>            team = sb.addPlayerTeam(teamId);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        if (config.tagOnRight()) {
+<span class="src-ln"></span>            team.setPlayerPrefix(Component.empty());
+<span class="src-ln"></span>            team.setPlayerSuffix(Component.literal(&quot; [&quot; + clan.name + &quot;]&quot;).withStyle(clan.color));
+<span class="src-ln"></span>        } else {
+<span class="src-ln"></span>            team.setPlayerPrefix(Component.literal(&quot;[&quot; + clan.name + &quot;] &quot;).withStyle(clan.color));
+<span class="src-ln"></span>            team.setPlayerSuffix(Component.empty());
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        // Only remove online players who are no longer members. Offline members
+<span class="src-ln"></span>        // stay in the team, so their tag is already there when they rejoin.
+<span class="src-ln"></span>        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+<span class="src-ln"></span>            String name = online.getScoreboardName();
+<span class="src-ln"></span>            if (team.getPlayers().contains(name) &amp;&amp; !clan.members.contains(online.getUUID())) {
+<span class="src-ln"></span>                sb.removePlayerFromTeam(name, team);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        for (UUID memberId : clan.members) {
+<span class="src-ln"></span>            ServerPlayer player = server.getPlayerList().getPlayer(memberId);
+<span class="src-ln"></span>            if (player != null &amp;&amp; team != sb.getPlayersTeam(player.getScoreboardName())) {
+<span class="src-ln"></span>                sb.addPlayerToTeam(player.getScoreboardName(), team);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    /** Puts a player into their clan&#x27;s team (or out of all clan teams), without needing the player list. */
+<span class="src-ln"></span>    private void applyTeamForPlayer(MinecraftServer server, ServerPlayer player, boolean log) {
+<span class="src-ln"></span>        String clanKey = playerClans.get(player.getUUID());
+<span class="src-ln"></span>        Clan clan = clanKey != null ? clans.get(clanKey) : null;
+<span class="src-ln"></span>        String name = player.getScoreboardName();
+<span class="src-ln"></span>        Scoreboard sb = server.getScoreboard();
+<span class="src-ln"></span>        if (clan == null) {
+<span class="src-ln"></span>            PlayerTeam current = sb.getPlayersTeam(name);
+<span class="src-ln"></span>            if (current != null &amp;&amp; current.getName().startsWith(&quot;clan_&quot;)) {
+<span class="src-ln"></span>                sb.removePlayerFromTeam(name, current);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>            return;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        this.applyTeamForClan(server, clan);
+<span class="src-ln"></span>        PlayerTeam team = sb.getPlayerTeam(this.teamIdFromClanName(clan.name));
+<span class="src-ln"></span>        if (team != null &amp;&amp; sb.getPlayersTeam(name) != team) {
+<span class="src-ln"></span>            sb.addPlayerToTeam(name, team);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        if (log) {
+<span class="src-ln"></span>            System.out.println(&quot;[SimpleClan] Applied team for &quot; + name + &quot; in clan &quot; + clan.name);
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private void removeFromTeam(MinecraftServer server, ServerPlayer player) {
+<span class="src-ln"></span>        Scoreboard sb = server.getScoreboard();
+<span class="src-ln"></span>        String playerName = player.getScoreboardName();
+<span class="src-ln"></span>        for (PlayerTeam t : new ArrayList&lt;&gt;(sb.getPlayerTeams())) {
+<span class="src-ln"></span>            if (t.getPlayers().contains(playerName)) {
+<span class="src-ln"></span>                sb.removePlayerFromTeam(playerName, t);
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private String teamIdFromClanName(String clanName) {
+<span class="src-ln"></span>        String id = &quot;clan_&quot; + clanName.replaceAll(&quot;[^A-Za-z0-9]&quot;, &quot;&quot;);
+<span class="src-ln"></span>        return id.length() &gt; 16 ? id.substring(0, 16) : id;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private String getNameIfOnline(MinecraftServer server, UUID uuid) {
+<span class="src-ln"></span>        ServerPlayer p = server.getPlayerList().getPlayer(uuid);
+<span class="src-ln"></span>        return p != null ? p.getName().getString() : uuid.toString();
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private ServerPlayer getPlayer(CommandContext&lt;CommandSourceStack&gt; ctx) {
+<span class="src-ln"></span>        try {
+<span class="src-ln"></span>            return ctx.getSource().getPlayerOrException();
+<span class="src-ln"></span>        } catch (Exception e) {
+<span class="src-ln"></span>            ctx.getSource().sendSuccess(() -&gt; red(&quot;Only players can use this command.&quot;), false);
+<span class="src-ln"></span>            return null;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private ServerPlayer lookupOnlinePlayer(MinecraftServer server, String name) {
+<span class="src-ln"></span>        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+<span class="src-ln"></span>            if (p.getName().getString().equalsIgnoreCase(name)) {
+<span class="src-ln"></span>                return p;
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>        return null;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    // --- Data ---------------------------------------------------------------
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static class Clan {
+<span class="src-ln"></span>        String name;
+<span class="src-ln"></span>        ChatFormatting color;
+<span class="src-ln"></span>        UUID owner;
+<span class="src-ln"></span>        Set&lt;UUID&gt; members = new HashSet&lt;&gt;();
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        Clan(String name, ChatFormatting color, UUID owner) {
+<span class="src-ln"></span>            this.name = name;
+<span class="src-ln"></span>            this.color = color;
+<span class="src-ln"></span>            this.owner = owner;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static class ClanDataContainer {
+<span class="src-ln"></span>        List&lt;Clan&gt; clans;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static class InviteDataContainer {
+<span class="src-ln"></span>        List&lt;InviteEntry&gt; invites;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static class InviteEntry {
+<span class="src-ln"></span>        UUID invitee;
+<span class="src-ln"></span>        UUID inviter;
+<span class="src-ln"></span>        /** Added in 1.1.0; null in files written by older versions. */
+<span class="src-ln"></span>        String clan;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        InviteEntry(UUID invitee, UUID inviter, String clan) {
+<span class="src-ln"></span>            this.invitee = invitee;
+<span class="src-ln"></span>            this.inviter = inviter;
+<span class="src-ln"></span>            this.clan = clan;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static class RequestDataContainer {
+<span class="src-ln"></span>        List&lt;RequestEntry&gt; requests;
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static class RequestEntry {
+<span class="src-ln"></span>        String clanName;
+<span class="src-ln"></span>        List&lt;UUID&gt; requests;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        RequestEntry(String clanName, List&lt;UUID&gt; requests) {
+<span class="src-ln"></span>            this.clanName = clanName;
+<span class="src-ln"></span>            this.requests = requests;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>}</code></pre>
+</section>
+<section class="src-file" id="clanconfig-java">
+  <div class="src-head">
+    <div><span class="src-name">ClanConfig.java</span>
+      <span class="src-path">src/main/java/com/simpleclan/ClanConfig.java</span></div>
+    <button type="button" class="copy src-copy" data-file="clanconfig-java">
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h9v10h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>
+      <span>Copy</span>
+    </button>
+  </div>
+  <pre class="src-code"><code id="code-clanconfig-java"><span class="src-ln"></span>package com.simpleclan;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>import com.google.gson.Gson;
+<span class="src-ln"></span>import com.google.gson.GsonBuilder;
+<span class="src-ln"></span>import net.fabricmc.loader.api.FabricLoader;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>import java.io.IOException;
+<span class="src-ln"></span>import java.nio.file.Files;
+<span class="src-ln"></span>import java.nio.file.Path;
+<span class="src-ln"></span>import java.util.Locale;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>/** JSON config stored at config/simple-clan.json. */
+<span class="src-ln"></span>public final class ClanConfig {
+<span class="src-ln"></span>    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    public enum LocatorBarMode {
+<span class="src-ln"></span>        EVERYONE(&quot;everyone&quot;), CLAN(&quot;only your own clan&quot;), NOBODY(&quot;nobody&quot;);
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        private final String label;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        LocatorBarMode(String label) {
+<span class="src-ln"></span>            this.label = label;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>        public String label() {
+<span class="src-ln"></span>            return label;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    /** Who shows up on a player&#x27;s locator bar: &quot;everyone&quot;, &quot;clan&quot; or &quot;nobody&quot;. */
+<span class="src-ln"></span>    public String locatorBar = &quot;everyone&quot;;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    /** Where the [Clan] tag goes: &quot;left&quot; ([Clan] Steve) or &quot;right&quot; (Steve [Clan]). */
+<span class="src-ln"></span>    public String tagPosition = &quot;left&quot;;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    public boolean tagOnRight() {
+<span class="src-ln"></span>        return tagPosition != null &amp;&amp; tagPosition.trim().equalsIgnoreCase(&quot;right&quot;);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    public LocatorBarMode locatorBarMode() {
+<span class="src-ln"></span>        try {
+<span class="src-ln"></span>            return LocatorBarMode.valueOf(locatorBar.trim().toUpperCase(Locale.ROOT));
+<span class="src-ln"></span>        } catch (RuntimeException e) {
+<span class="src-ln"></span>            return LocatorBarMode.EVERYONE;
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    private static Path path() {
+<span class="src-ln"></span>        return FabricLoader.getInstance().getConfigDir().resolve(&quot;simple-clan.json&quot;);
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    public static ClanConfig load() {
+<span class="src-ln"></span>        Path path = path();
+<span class="src-ln"></span>        try {
+<span class="src-ln"></span>            if (Files.exists(path)) {
+<span class="src-ln"></span>                ClanConfig c = GSON.fromJson(Files.readString(path), ClanConfig.class);
+<span class="src-ln"></span>                if (c != null) {
+<span class="src-ln"></span>                    if (c.tagPosition == null) {
+<span class="src-ln"></span>                        c.tagPosition = &quot;left&quot;;
+<span class="src-ln"></span>                    }
+<span class="src-ln"></span>                    c.save(); // adds options that older config files don&#x27;t have yet
+<span class="src-ln"></span>                    return c;
+<span class="src-ln"></span>                }
+<span class="src-ln"></span>            }
+<span class="src-ln"></span>            ClanConfig fresh = new ClanConfig();
+<span class="src-ln"></span>            fresh.save();
+<span class="src-ln"></span>            return fresh;
+<span class="src-ln"></span>        } catch (IOException | RuntimeException e) {
+<span class="src-ln"></span>            return new ClanConfig();
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    public void save() {
+<span class="src-ln"></span>        try {
+<span class="src-ln"></span>            Files.createDirectories(path().getParent());
+<span class="src-ln"></span>            Files.writeString(path(), GSON.toJson(this));
+<span class="src-ln"></span>        } catch (IOException ignored) {
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>}</code></pre>
+</section>
+<section class="src-file" id="locatorbarmixin-java">
+  <div class="src-head">
+    <div><span class="src-name">LocatorBarMixin.java</span>
+      <span class="src-path">src/main/java/com/simpleclan/mixin/LocatorBarMixin.java</span></div>
+    <button type="button" class="copy src-copy" data-file="locatorbarmixin-java">
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h9v10h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>
+      <span>Copy</span>
+    </button>
+  </div>
+  <pre class="src-code"><code id="code-locatorbarmixin-java"><span class="src-ln"></span>package com.simpleclan.mixin;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>import com.simpleclan.SimpleClan;
+<span class="src-ln"></span>import net.minecraft.server.level.ServerPlayer;
+<span class="src-ln"></span>import net.minecraft.world.entity.LivingEntity;
+<span class="src-ln"></span>import net.minecraft.world.waypoints.WaypointTransmitter;
+<span class="src-ln"></span>import org.spongepowered.asm.mixin.Mixin;
+<span class="src-ln"></span>import org.spongepowered.asm.mixin.injection.At;
+<span class="src-ln"></span>import org.spongepowered.asm.mixin.injection.Inject;
+<span class="src-ln"></span>import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>import java.util.Optional;
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>/**
+<span class="src-ln"></span> * Players are locator bar &quot;transmitters&quot;. Refusing the connection here means the
+<span class="src-ln"></span> * receiving player&#x27;s client never gets that player&#x27;s dot, so this works with
+<span class="src-ln"></span> * vanilla clients.
+<span class="src-ln"></span> */
+<span class="src-ln"></span>@Mixin(LivingEntity.class)
+<span class="src-ln"></span>public abstract class LocatorBarMixin {
+<span class="src-ln"></span>&#8203;
+<span class="src-ln"></span>    @Inject(method = &quot;makeWaypointConnectionWith&quot;, at = @At(&quot;HEAD&quot;), cancellable = true)
+<span class="src-ln"></span>    private void simpleclan$filterLocatorBar(ServerPlayer receiver,
+<span class="src-ln"></span>                                             CallbackInfoReturnable&lt;Optional&lt;WaypointTransmitter.Connection&gt;&gt; cir) {
+<span class="src-ln"></span>        if ((Object) this instanceof ServerPlayer source &amp;&amp; source != receiver
+<span class="src-ln"></span>                &amp;&amp; !SimpleClan.locatorVisible(source, receiver)) {
+<span class="src-ln"></span>            cir.setReturnValue(Optional.empty());
+<span class="src-ln"></span>        }
+<span class="src-ln"></span>    }
+<span class="src-ln"></span>}</code></pre>
+</section>
+<section class="src-file" id="simple-clan-mixins-json">
+  <div class="src-head">
+    <div><span class="src-name">simple-clan.mixins.json</span>
+      <span class="src-path">src/main/resources/simple-clan.mixins.json</span></div>
+    <button type="button" class="copy src-copy" data-file="simple-clan-mixins-json">
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h9v10h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>
+      <span>Copy</span>
+    </button>
+  </div>
+  <pre class="src-code"><code id="code-simple-clan-mixins-json"><span class="src-ln"></span>{
+<span class="src-ln"></span>  &quot;required&quot;: true,
+<span class="src-ln"></span>  &quot;package&quot;: &quot;com.simpleclan.mixin&quot;,
+<span class="src-ln"></span>  &quot;compatibilityLevel&quot;: &quot;JAVA_25&quot;,
+<span class="src-ln"></span>  &quot;mixins&quot;: [
+<span class="src-ln"></span>    &quot;LocatorBarMixin&quot;
+<span class="src-ln"></span>  ],
+<span class="src-ln"></span>  &quot;injectors&quot;: {
+<span class="src-ln"></span>    &quot;defaultRequire&quot;: 1
+<span class="src-ln"></span>  }
+<span class="src-ln"></span>}</code></pre>
+</section>
+<section class="src-file" id="fabric-mod-json">
+  <div class="src-head">
+    <div><span class="src-name">fabric.mod.json</span>
+      <span class="src-path">src/main/resources/fabric.mod.json</span></div>
+    <button type="button" class="copy src-copy" data-file="fabric-mod-json">
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h9v10h-2V3H5zM2 5h9v10H2zm2 2v6h5V7z"/></svg>
+      <span>Copy</span>
+    </button>
+  </div>
+  <pre class="src-code"><code id="code-fabric-mod-json"><span class="src-ln"></span>{
+<span class="src-ln"></span>  &quot;schemaVersion&quot;: 1,
+<span class="src-ln"></span>  &quot;id&quot;: &quot;simple-clan&quot;,
+<span class="src-ln"></span>  &quot;version&quot;: &quot;1.2.2&quot;,
+<span class="src-ln"></span>  &quot;name&quot;: &quot;SimpleClan&quot;,
+<span class="src-ln"></span>  &quot;description&quot;: &quot;Player clans with colored name prefixes, clan chat, and locator bar visibility control.&quot;,
+<span class="src-ln"></span>  &quot;authors&quot;: [&quot;Oakbanner&quot;],
+<span class="src-ln"></span>  &quot;license&quot;: &quot;All-Rights-Reserved&quot;,
+<span class="src-ln"></span>  &quot;icon&quot;: &quot;assets/simple-clan/icon.png&quot;,
+<span class="src-ln"></span>  &quot;environment&quot;: &quot;*&quot;,
+<span class="src-ln"></span>  &quot;entrypoints&quot;: {
+<span class="src-ln"></span>    &quot;main&quot;: [&quot;com.simpleclan.SimpleClan&quot;]
+<span class="src-ln"></span>  },
+<span class="src-ln"></span>  &quot;mixins&quot;: [&quot;simple-clan.mixins.json&quot;],
+<span class="src-ln"></span>  &quot;depends&quot;: {
+<span class="src-ln"></span>    &quot;fabricloader&quot;: &quot;&gt;=0.19.5&quot;,
+<span class="src-ln"></span>    &quot;fabric-api&quot;: &quot;*&quot;,
+<span class="src-ln"></span>    &quot;minecraft&quot;: &quot;&gt;=26.1&quot;,
+<span class="src-ln"></span>    &quot;java&quot;: &quot;&gt;=25&quot;
+<span class="src-ln"></span>  }
+<span class="src-ln"></span>}</code></pre>
+</section>
+  </main>
+
+  <aside class="side" aria-label="Files">
+    <section class="panel src-toc">
+      <h2>Files</h2>
+      <ul>
+      <li><a href="#simpleclan-java">SimpleClan.java</a></li>
+      <li><a href="#clanconfig-java">ClanConfig.java</a></li>
+      <li><a href="#locatorbarmixin-java">LocatorBarMixin.java</a></li>
+      <li><a href="#simple-clan-mixins-json">simple-clan.mixins.json</a></li>
+      <li><a href="#fabric-mod-json">fabric.mod.json</a></li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Build it yourself</h2>
+      <p>With the source above and <a href="https://fabricmc.net/">Fabric</a> Loom, <code>gradlew :simpleclan:build</code> produces the same mod. The jar on this site is built from exactly these files.</p>
+    </section>
+  </aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <p>SimpleClan by Oakbanner. All rights reserved.</p>
+    <p>Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
+  </div>
+</footer>
+
+<script src="source.js" defer></script>
+</body>
+</html>
